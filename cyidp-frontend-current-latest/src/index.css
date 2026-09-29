@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --color-rt-red: #ee313c;
+  --color-rt-btn: #f3a8ac;
+  --color-rt-btn-hover: #eca0a5;
+  --color-rt-card: #f5f5f5;
+  --color-rt-card-border: #e0e5ea;
+  --color-rt-link: #527162;
+  --color-rt-link-hover: #3f5a4d;
+  --color-rt-label: #6b7280;
+  --color-rt-input: #f7fafc;
+  --color-rt-input-border: #e2e8ee;
+  --color-rt-divider: #d5dde5;
+  --color-rt-placeholder: #9ca3af;
+  --color-rt-title: #000000;
+
+  --color-cy-red: #e60d2e;
+  --color-cy-nav: #054fa6;
+  --color-cy-teal: #169da5;
+  --color-cy-teal-hover: #12848b;
+  --color-cy-purple: #5b2d91;
+  --color-cy-sidebar: #f5f5f5;
+  --color-cy-page: #fafbfd;
+  --color-cy-border: #d9e0e6;
+  --color-cy-text: #222222;
+  --color-cy-muted: #222222;
+  --color-cy-crumb: #169da5;
+  --color-cy-crumb-bar: #169da5;
+
+  --color-cy-step: #777777;
+  --color-cy-step-done: #298dff;
+  --color-cy-hold: #dd7002;
+  --color-cy-reject: #ef343f;
+  --color-cy-complete: #029b03;
+  --color-cy-row-alt: #f5f5f5;
+  --color-cy-divider: #d6d7db;
+
+  --font-logo: "Libre Baskerville", Georgia, "Times New Roman", Times, serif;
+  --font-ui: "Inter", "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  background: #ffffff;
+  color: #222222;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100svh;
+}
