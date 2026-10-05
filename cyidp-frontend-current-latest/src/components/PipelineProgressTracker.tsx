@@ -216,8 +216,15 @@ function buildWorkflowView(jobStatus: JobStatus): WorkflowView {
   } else if (stage === 'basic') {
     title = 'Checking for exact duplicates'
     detail = message || 'Scanning file fingerprints for identical copies.'
+  } else if (status === 'processing' && (stage === 'job_control' || stage === 'queued')) {
+    title = message?.toLowerCase().includes('immediate')
+      ? 'Starting now'
+      : 'Starting processing'
+    detail = message || 'Your documents are being processed.'
   } else if (status === 'queued') {
-    title = 'Queued to start'
+    title = message?.toLowerCase().includes('immediate')
+      ? 'Starting now'
+      : 'Queued to start'
     detail = message || 'Your job is next in line.'
   }
 
