@@ -358,7 +358,10 @@ const fetchDuplicateDataOnce = async (jobId: string, bypassCache = false): Promi
       }
 
       const jsonResponse = await response.json()
-      const jsonData = (jsonResponse.duplicates as Record<string, unknown>[]) || []
+      const jsonData =
+        ((jsonResponse.duplicates as Record<string, unknown>[]) || []).length > 0
+          ? (jsonResponse.duplicates as Record<string, unknown>[])
+          : ((jsonResponse.documents as Record<string, unknown>[]) || [])
 
       if (jsonData.length === 0) {
         // Keep prior cache when the API returns empty mid-refresh.
@@ -407,9 +410,12 @@ const fetchDuplicateDataOnce = async (jobId: string, bypassCache = false): Promi
     }
 
     const jsonResponse = await response.json()
-    const jsonData = (jsonResponse.duplicates as Record<string, unknown>[]) || []
+    const jsonData =
+      ((jsonResponse.duplicates as Record<string, unknown>[]) || []).length > 0
+        ? (jsonResponse.duplicates as Record<string, unknown>[])
+        : ((jsonResponse.documents as Record<string, unknown>[]) || [])
 
-    // Return empty data if no duplicates found (don't throw error)
+    // Show uploaded/inventory rows when there are no duplicate pairs.
     if (jsonData.length === 0) {
       const result: ExcelData = {
         headers: [],
