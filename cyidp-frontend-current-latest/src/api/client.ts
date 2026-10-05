@@ -248,22 +248,30 @@ export async function startJob(jobId: string, pipeline?: string): Promise<JobSta
  * Get the current status of a processing job.
  */
 export async function getJobStatus(jobId: string): Promise<JobStatus> {
-  const response = await fetch(`${getApiBaseUrl()}/api/jobs/${jobId}/status`, {
-    cache: 'no-store',
-    headers: {
-      'Cache-Control': 'no-cache',
-      Pragma: 'no-cache',
-    },
-  })
+  let lastError: Error | null = null
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const response = await fetch(`${getApiBaseUrl()}/api/jobs/${jobId}/status`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+      },
+    })
 
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error('Job not found')
+    if (response.ok) {
+      return response.json()
     }
+
+    if (response.status === 404) {
+      lastError = new Error('Job not found')
+      await new Promise((resolve) => setTimeout(resolve, 750 * (attempt + 1)))
+      continue
+    }
+
     throw new Error(`Failed to fetch job status: ${response.statusText}`)
   }
 
-  return response.json()
+  throw lastError || new Error('Failed to fetch job status')
 }
 
 // ============================================================================

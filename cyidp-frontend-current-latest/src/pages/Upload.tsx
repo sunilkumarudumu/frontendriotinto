@@ -57,6 +57,7 @@ const isConfirmDuplicateChecked = (row: Record<string, unknown>, keys: string[])
 }
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024 // 2 GB
+const UPLOAD_BATCH_SIZE = 8
 
 const UPLOAD_FLOW_STEPS = [
   { id: 'select', label: 'Select Files' },
@@ -294,64 +295,79 @@ export default function Upload() {
     }
   }
 
-  const uploadDocumentsWithProgress = (files: File[]): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest()
+  const uploadDocumentsWithProgress = async (files: File[]): Promise<string> => {
+    let jobId = ''
+    const totalBytes = files.reduce((sum, file) => sum + file.size, 0)
+    let uploadedBytes = 0
 
-      xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = Math.round((event.loaded / event.total) * 100)
+    for (let start = 0; start < files.length; start += UPLOAD_BATCH_SIZE) {
+      const fileBatch = files.slice(start, start + UPLOAD_BATCH_SIZE)
+      jobId = await new Promise<string>((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        const batchStartBytes = uploadedBytes
+
+        xhr.timeout = 0
+        xhr.upload.addEventListener('progress', (event) => {
+          if (!event.lengthComputable) return
+          const loaded = batchStartBytes + event.loaded
+          const percentComplete = totalBytes
+            ? Math.min(99, Math.round((loaded / totalBytes) * 100))
+            : Math.round(((start + fileBatch.length) / files.length) * 100)
           setUploadProgress(percentComplete)
-        }
-      })
+        })
 
-      xhr.addEventListener('load', () => {
-        if (xhr.status === 200) {
-          try {
-            const response = JSON.parse(xhr.responseText)
-            resolve(response.job_id)
-          } catch (error) {
-            reject(new Error('Failed to parse upload response'))
+        xhr.addEventListener('load', () => {
+          if (xhr.status === 200) {
+            try {
+              const response = JSON.parse(xhr.responseText)
+              resolve(response.job_id)
+            } catch {
+              reject(new Error('Failed to parse upload response'))
+            }
+          } else {
+            try {
+              const error = JSON.parse(xhr.responseText)
+              reject(new Error(error.detail || 'Upload failed'))
+            } catch {
+              reject(new Error(`Upload failed: ${xhr.statusText}`))
+            }
           }
-        } else {
-          try {
-            const error = JSON.parse(xhr.responseText)
-            reject(new Error(error.detail || 'Upload failed'))
-          } catch {
-            reject(new Error(`Upload failed: ${xhr.statusText}`))
-          }
+        })
+
+        xhr.addEventListener('error', () => {
+          reject(
+            new Error(
+              'Upload failed due to network/CORS error. Confirm the Function App is healthy and allows this Static Web App origin.',
+            ),
+          )
+        })
+        xhr.addEventListener('abort', () => reject(new Error('Upload was cancelled')))
+        xhr.addEventListener('timeout', () => reject(new Error('Upload timed out. Retry this batch.')))
+
+        const formData = new FormData()
+        formData.append('site', site)
+        formData.append('batch', batch)
+        formData.append('library', library)
+        formData.append('uploadedDate', new Date().toISOString())
+        if (jobId) {
+          formData.append('job_id', jobId)
         }
+        for (const file of fileBatch) {
+          formData.append('files', file)
+        }
+
+        xhr.open('POST', `${getApiBaseUrl()}/api/documents/upload`)
+        xhr.send(formData)
       })
+      uploadedBytes += fileBatch.reduce((sum, file) => sum + file.size, 0)
+      setUploadProgress(
+        totalBytes
+          ? Math.min(99, Math.round((uploadedBytes / totalBytes) * 100))
+          : Math.round(((start + fileBatch.length) / files.length) * 100),
+      )
+    }
 
-      xhr.addEventListener('error', () => {
-        reject(
-          new Error(
-            'Upload failed due to network/CORS error. Confirm the Function App is healthy and allows this Static Web App origin.',
-          ),
-        )
-      })
-
-      xhr.addEventListener('abort', () => {
-        reject(new Error('Upload was cancelled'))
-      })
-
-      const formData = new FormData()
-      
-      // Add metadata fields
-      formData.append('site', site)
-      formData.append('batch', batch)
-      formData.append('library', library)
-      formData.append('uploadedDate', new Date().toISOString())
-      
-      // Add files
-      for (const file of files) {
-        formData.append('files', file)
-      }
-
-      const baseUrl = getApiBaseUrl()
-      xhr.open('POST', `${baseUrl}/api/documents/upload`)
-      xhr.send(formData)
-    })
+    return jobId
   }
 
   const handleStartProcessing = async () => {
