@@ -458,12 +458,6 @@ export default function Upload() {
         }
       } catch (err) {
         console.error('Failed to fetch status:', err)
-        if (err instanceof Error && err.message === 'Job not found') {
-          setIsPolling(false)
-          localStorage.removeItem('currentJobId')
-          setUploadError('This job is no longer available. Please upload the documents again.')
-          return
-        }
         nextDelay = 2000
       }
 

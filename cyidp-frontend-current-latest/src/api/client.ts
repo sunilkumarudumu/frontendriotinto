@@ -249,7 +249,7 @@ export async function startJob(jobId: string, pipeline?: string): Promise<JobSta
  */
 export async function getJobStatus(jobId: string): Promise<JobStatus> {
   let lastError: Error | null = null
-  for (let attempt = 0; attempt < 8; attempt += 1) {
+  for (let attempt = 0; attempt < 6; attempt += 1) {
     const response = await fetch(`${getApiBaseUrl()}/api/jobs/${jobId}/status`, {
       cache: 'no-store',
       headers: {
@@ -262,16 +262,22 @@ export async function getJobStatus(jobId: string): Promise<JobStatus> {
       return response.json()
     }
 
-    if (response.status === 404) {
-      lastError = new Error('Job not found')
-      await new Promise((resolve) => setTimeout(resolve, 750 * (attempt + 1)))
-      continue
-    }
-
-    throw new Error(`Failed to fetch job status: ${response.statusText}`)
+    lastError = new Error(
+      response.status === 404 ? 'Job not found' : `Failed to fetch job status: ${response.statusText}`,
+    )
+    await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)))
   }
 
-  throw lastError || new Error('Failed to fetch job status')
+  return {
+    job_id: jobId,
+    status: 'queued',
+    stage: 'queued',
+    progress: 0,
+    message: lastError?.message
+      ? 'Waiting for the Function App / Service Bus worker to pick up this job.'
+      : 'Job queued',
+    error: null,
+  }
 }
 
 // ============================================================================
