@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 const API_TARGET =
   process.env.VITE_DEV_API_PROXY_TARGET ||
-  'https://app-mine-cls-dev-agffcjfgd5eqfcdh.centralindia-01.azurewebsites.net'
+  'https://testingriotinto-hhcaare6cuc9gfcn.centralindia-01.azurewebsites.net'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
