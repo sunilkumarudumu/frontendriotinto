@@ -435,8 +435,24 @@ export default function Upload() {
           setIsPolling(false)
           setJobStatus(status)
           setShowPipelineFinished(true)
-          setTimeout(() => {
-            navigate(`/duplicate?job_id=${currentJobId}`)
+          setTimeout(async () => {
+            // Prefer Duplicate Detection only when pairs exist; otherwise show
+            // classified documents so a successful run is never an empty page.
+            try {
+              const response = await fetch(
+                `${getApiBaseUrl()}/api/jobs/${currentJobId}/reports/all-stages/data`,
+                { cache: 'no-store' },
+              )
+              const payload = response.ok ? await response.json() : null
+              const rows = Array.isArray(payload?.duplicates) ? payload.duplicates : []
+              if (rows.length > 0) {
+                navigate(`/duplicate?job_id=${currentJobId}`)
+                return
+              }
+            } catch {
+              // fall through to classification view
+            }
+            navigate(`/list-of-documents?job_id=${currentJobId}`)
           }, 1200)
           return
         }
