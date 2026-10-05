@@ -324,7 +324,11 @@ export default function Upload() {
       })
 
       xhr.addEventListener('error', () => {
-        reject(new Error('Upload failed due to network error'))
+        reject(
+          new Error(
+            'Upload failed due to network/CORS error. Confirm the Function App is healthy and allows this Static Web App origin.',
+          ),
+        )
       })
 
       xhr.addEventListener('abort', () => {
