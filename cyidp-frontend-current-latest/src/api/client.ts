@@ -326,7 +326,35 @@ export async function getDocuments(
   }
 
   const data = await response.json()
-  return data.documents || []
+  const documents = Array.isArray(data.documents) ? data.documents : []
+  if (documents.length || !jobId) {
+    return documents
+  }
+
+  const inventoryResponse = await fetch(`${getApiBaseUrl()}/api/jobs/${encodeURIComponent(jobId)}/inventory`, {
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+    },
+  })
+  if (!inventoryResponse.ok) {
+    return documents
+  }
+  const inventory = await inventoryResponse.json()
+  return (inventory.documents || []).map((row: Record<string, unknown>) => ({
+    document_id: String(row.document_id || ''),
+    file_name: String(row.Filename || row['Original Document'] || row.file_name || ''),
+    path: String(row.Filename || row.path || ''),
+    score: null,
+    status: String(row.current_status || row.status || 'uploaded'),
+    pipeline_stage: String(row.Stage || row.pipeline_stage || ''),
+    docint_status: row.docint_status as string | null,
+    llm_status: row.llm_status as string | null,
+    advanced_status: row.advanced_status as string | null,
+    advanced_release_status: row.advanced_release_status as string | null,
+    current_status: String(row.current_status || ''),
+  }))
 }
 
 /**
