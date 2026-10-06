@@ -166,13 +166,15 @@ export default function Metadata() {
   }, [])
 
   useEffect(() => {
-    async function loadDocuments() {
-      setIsLoading(true)
+    let isActive = true
+    let refreshTimeout: ReturnType<typeof setTimeout> | null = null
+
+    async function loadDocuments(silent = false) {
+      if (!silent) setIsLoading(true)
       try {
         const hasDateFilter = Boolean(fromDate || toDate)
         if (!hasDateFilter && !jobId) {
-          setDocuments([])
-          setIsLoading(false)
+          if (isActive) setDocuments([])
           return
         }
         const docs = await getDocuments(jobId || '', {
@@ -180,6 +182,7 @@ export default function Metadata() {
           fromDate: fromDate || undefined,
           toDate: toDate || undefined,
         })
+        if (!isActive) return
 
         const docRows: DocRow[] = docs.map((doc, index) => ({
           id: index + 1,
@@ -230,14 +233,27 @@ export default function Metadata() {
               )
 
         setDocuments(visibleRows)
+        const stillWorking = visibleRows.some((row) => {
+          const status = String(row.details.documentStatus || '').toLowerCase()
+          return !status || status === 'uploaded' || status === 'n/a' || status.includes('process')
+        })
+        if (isActive && jobId && (visibleRows.length === 0 || stillWorking)) {
+          refreshTimeout = setTimeout(() => loadDocuments(true), 2500)
+        }
       } catch {
-        // Keep previous state if request fails
+        if (isActive && jobId) {
+          refreshTimeout = setTimeout(() => loadDocuments(true), 4000)
+        }
       } finally {
-        setIsLoading(false)
+        if (isActive && !silent) setIsLoading(false)
       }
     }
 
-    loadDocuments()
+    void loadDocuments()
+    return () => {
+      isActive = false
+      if (refreshTimeout) clearTimeout(refreshTimeout)
+    }
   }, [jobId, fromDate, toDate, user])
 
   const documentStatusOptionMap = new Map<string, string>()

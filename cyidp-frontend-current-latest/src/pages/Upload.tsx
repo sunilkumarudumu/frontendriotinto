@@ -444,8 +444,7 @@ export default function Upload() {
                 { cache: 'no-store' },
               )
               const payload = response.ok ? await response.json() : null
-              const rows = Array.isArray(payload?.duplicates) ? payload.duplicates : []
-              if (rows.length > 0) {
+              if (payload?.has_duplicate_pairs) {
                 navigate(`/duplicate?job_id=${currentJobId}`)
                 return
               }

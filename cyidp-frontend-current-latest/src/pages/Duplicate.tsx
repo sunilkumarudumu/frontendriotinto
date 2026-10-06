@@ -358,10 +358,11 @@ const fetchDuplicateDataOnce = async (jobId: string, bypassCache = false): Promi
       }
 
       const jsonResponse = await response.json()
-      const jsonData =
-        ((jsonResponse.duplicates as Record<string, unknown>[]) || []).length > 0
-          ? (jsonResponse.duplicates as Record<string, unknown>[])
-          : ((jsonResponse.documents as Record<string, unknown>[]) || [])
+      const pairs = ((jsonResponse.duplicates as Record<string, unknown>[]) || []).filter(
+        (row) => !row.inventory_row,
+      )
+      const inventory = (jsonResponse.documents as Record<string, unknown>[]) || []
+      const jsonData = jsonResponse.has_duplicate_pairs ? pairs : (pairs.length ? pairs : inventory)
 
       if (jsonData.length === 0) {
         // Keep prior cache when the API returns empty mid-refresh.
@@ -410,10 +411,11 @@ const fetchDuplicateDataOnce = async (jobId: string, bypassCache = false): Promi
     }
 
     const jsonResponse = await response.json()
-    const jsonData =
-      ((jsonResponse.duplicates as Record<string, unknown>[]) || []).length > 0
-        ? (jsonResponse.duplicates as Record<string, unknown>[])
-        : ((jsonResponse.documents as Record<string, unknown>[]) || [])
+    const pairs = ((jsonResponse.duplicates as Record<string, unknown>[]) || []).filter(
+      (row) => !row.inventory_row,
+    )
+    const inventory = (jsonResponse.documents as Record<string, unknown>[]) || []
+    const jsonData = jsonResponse.has_duplicate_pairs ? pairs : (pairs.length ? pairs : inventory)
 
     // Show uploaded/inventory rows when there are no duplicate pairs.
     if (jsonData.length === 0) {
@@ -421,7 +423,6 @@ const fetchDuplicateDataOnce = async (jobId: string, bypassCache = false): Promi
         headers: [],
         rows: [],
       }
-      duplicateDataCache.set(jobId, result)
       return result
     }
 
@@ -561,9 +562,9 @@ export default function Duplicate() {
         setCurrentJobBatch(currentBatch)
         setCurrentJobLibrary(currentLibrary)
 
-        setSelectedAsset(currentAsset || nextAssets[0] || '')
-        setSelectedBatch(currentBatch || nextBatches[0] || '')
-        setSelectedLibrary(currentLibrary || '')
+        setSelectedAsset(currentAsset)
+        setSelectedBatch(currentBatch)
+        setSelectedLibrary(currentLibrary)
       } catch {
         if (!isActive) return
         setAssetOptions([])
