@@ -385,6 +385,7 @@ export default function Upload() {
       setCurrentJobId(jobId)
       setShowPipelineFinished(false)
       await startJob(jobId)
+      setUploadError('')
       setJobStatus({
         status: 'processing',
         stage: 'basic',

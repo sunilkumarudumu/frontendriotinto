@@ -238,7 +238,14 @@ export async function startJob(jobId: string, pipeline?: string): Promise<JobSta
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'Failed to start job' }))
-    throw new Error(error.detail || `Failed to start job: ${response.statusText}`)
+    const detail = String(error.detail || '')
+    if (
+      response.status === 400 &&
+      /awaiting duplicate review|already processing|already completed/i.test(detail)
+    ) {
+      return getJobStatus(jobId)
+    }
+    throw new Error(detail || `Failed to start job: ${response.statusText}`)
   }
 
   return response.json()
