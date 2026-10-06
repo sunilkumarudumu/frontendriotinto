@@ -48,10 +48,16 @@ export interface JobStatus {
   batch?: string | null
   document_count?: number | null
   pipeline_tracking?: {
+    basic?: { done: number; total: number }
+    review?: { done: number; total: number }
+    duplicates?: { done: number; total: number }
+    advanced?: { done: number; total: number }
     ocr?: { done: number; total: number }
     post_ocr?: { done: number; total: number }
+    asset_classification?: { done: number; total: number }
     waiting_review?: { advanced: number; post_ocr: number }
     classification?: { done: number; total: number }
+    metadata?: { done: number; total: number }
   } | null
 }
 

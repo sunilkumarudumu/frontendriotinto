@@ -506,6 +506,29 @@ export default function PipelineProgressTracker({
             {view.title}
           </p>
           <p className="mt-1 font-ui text-[12px] leading-relaxed text-[#475569]">{view.detail}</p>
+          {jobStatus.pipeline_tracking && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {(
+                [
+                  ['Basic', jobStatus.pipeline_tracking.basic],
+                  ['Duplicates', jobStatus.pipeline_tracking.duplicates],
+                  ['Advanced', jobStatus.pipeline_tracking.advanced],
+                  ['OCR', jobStatus.pipeline_tracking.ocr],
+                  ['Classification', jobStatus.pipeline_tracking.classification],
+                  ['Metadata', jobStatus.pipeline_tracking.metadata],
+                ] as const
+              ).map(([label, counter]) =>
+                counter && counter.total > 0 ? (
+                  <span
+                    key={label}
+                    className="rounded-full border border-[#b5dde0] bg-white px-2 py-1 text-[10px] font-semibold text-[#0f6b71]"
+                  >
+                    {label}: {counter.done}/{counter.total}
+                  </span>
+                ) : null,
+              )}
+            </div>
+          )}
 
           {(view.cta === 'duplicates' && onOpenDuplicates) || (view.cta === 'documents' && onOpenDocuments) ? (
             <div className={`mt-3 flex flex-wrap gap-2 ${compact ? '' : 'justify-center sm:justify-start'}`}>
