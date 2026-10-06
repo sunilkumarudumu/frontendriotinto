@@ -427,9 +427,13 @@ export default function Upload() {
         })
 
         if (status.status === 'failed') {
-          setIsPolling(false)
-          setUploadError(status.message || 'Pipeline processing failed')
-          return
+          try {
+            await startJob(currentJobId)
+          } catch {
+            // Keep polling; status calls also resume the job.
+          }
+          setUploadError('')
+          nextDelay = 1500
         }
 
         if (status.status === 'completed') {
@@ -512,9 +516,6 @@ export default function Upload() {
 
     if (jobStatus.status === 'completed' || jobStatus.status === 'awaiting_confirmation') {
       return 'completed'
-    }
-    if (jobStatus.status === 'failed') {
-      return phaseId === 'detect' ? 'processing' : 'pending'
     }
 
     const stage = String(jobStatus.stage || '').toLowerCase()
@@ -1132,14 +1133,6 @@ export default function Upload() {
                     </div>
                   )}
                 </>
-              )}
-
-              {jobStatus?.status === 'failed' && (
-                <div className="rounded-[8px] border border-[#fecaca] bg-[#fee2e2] p-4">
-                  <p className="font-ui text-[13px] font-semibold text-[#991b1b]">
-                    Processing failed. {jobStatus?.message || 'Please try uploading again.'}
-                  </p>
-                </div>
               )}
             </div>
           </div>

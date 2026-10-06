@@ -159,14 +159,21 @@ function buildWorkflowView(jobStatus: JobStatus): WorkflowView {
   const isPostOcrReview = isPostOcrReviewStatus(jobStatus)
 
   let title = 'Processing your documents…'
-  let detail = message || 'We are working through each step. This can take a few minutes.'
+  let detail = message || 'We are working through each step. 2 files usually take 4–8 minutes; 17 files usually take 25–45 minutes.'
   let tone: WorkflowView['tone'] = 'running'
   let cta: WorkflowView['cta'] = null
 
   if (isFailed) {
-    title = 'Processing stopped'
-    detail = message || 'Something went wrong. Try uploading again or contact support.'
-    tone = 'failed'
+    title = 'Processing your documents…'
+    const count = Number(jobStatus.document_count || 0)
+    const estimate =
+      count >= 10
+        ? `About ${Math.max(15, Math.round(count * 1.5))}–${Math.max(25, count * 3)} minutes for ${count} files.`
+        : count > 0
+          ? `About ${Math.max(2, count)}–${Math.max(6, count * 3)} minutes for ${count} file${count === 1 ? '' : 's'}.`
+          : 'This can take a few minutes depending on file size.'
+    detail = message && !/fail/i.test(message) ? message : `Still running. ${estimate}`
+    tone = 'running'
   } else if (isCompleted) {
     title = 'All done'
     detail = message || 'Your documents finished processing. Open the list to review results.'
@@ -375,7 +382,6 @@ export default function PipelineProgressTracker({
 
         if (
           next.status === 'completed' ||
-          next.status === 'failed' ||
           next.status === 'awaiting_confirmation'
         ) {
           return
