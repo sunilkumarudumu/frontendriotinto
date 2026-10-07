@@ -446,10 +446,7 @@ export default function PipelineProgressTracker({
   if (jobStatus.status === 'completed' || jobStatus.status === 'awaiting_confirmation') {
     highestProgressRef.current = 100
   } else {
-    highestProgressRef.current = Math.min(
-      99,
-      Math.max(highestProgressRef.current, view.progress),
-    )
+    highestProgressRef.current = Math.min(99, view.progress)
   }
   const progress = highestProgressRef.current
 
