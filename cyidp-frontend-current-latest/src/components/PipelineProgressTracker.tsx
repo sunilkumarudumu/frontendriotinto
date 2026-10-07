@@ -138,11 +138,13 @@ function getPipelineProgress(jobStatus: JobStatus | null): number {
 
   if (typeof jobStatus.progress === 'number' && jobStatus.progress > 0) {
     if (rank >= 0 && rank < stageRank('asset_classification')) {
-      return clampPercent(Math.min(Math.max(jobStatus.progress, stageBased * 0.85), 80))
+      return clampPercent(Math.min(Math.max(jobStatus.progress, stageBased * 0.85), 99))
     }
-    return clampPercent(Math.max(jobStatus.progress, stageBased * 0.85))
+    // 100% is a terminal value. A processing job at the final work stage
+    // must remain visibly active until the final-report worker confirms it.
+    return clampPercent(Math.min(99, Math.max(jobStatus.progress, stageBased * 0.85)))
   }
-  return stageBased
+  return clampPercent(Math.min(99, stageBased))
 }
 
 function buildWorkflowView(jobStatus: JobStatus): WorkflowView {
