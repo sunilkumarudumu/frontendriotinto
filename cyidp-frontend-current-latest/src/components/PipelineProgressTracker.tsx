@@ -138,13 +138,11 @@ function getPipelineProgress(jobStatus: JobStatus | null): number {
 
   if (typeof jobStatus.progress === 'number' && jobStatus.progress > 0) {
     if (rank >= 0 && rank < stageRank('asset_classification')) {
-      return clampPercent(Math.min(Math.max(jobStatus.progress, stageBased * 0.85), 99))
+      return clampPercent(Math.min(Math.max(jobStatus.progress, stageBased * 0.85), 80))
     }
-    // 100% is a terminal value. A processing job at the final work stage
-    // must remain visibly active until the final-report worker confirms it.
-    return clampPercent(Math.min(99, Math.max(jobStatus.progress, stageBased * 0.85)))
+    return clampPercent(Math.max(jobStatus.progress, stageBased * 0.85))
   }
-  return clampPercent(Math.min(99, stageBased))
+  return stageBased
 }
 
 function buildWorkflowView(jobStatus: JobStatus): WorkflowView {
@@ -442,7 +440,17 @@ export default function PipelineProgressTracker({
   }
 
   const view = buildWorkflowView(jobStatus)
-  highestProgressRef.current = Math.max(highestProgressRef.current, view.progress)
+  // A transient completion/recovery response must not leave the ring
+  // permanently at 100% while the backend is still processing. Only a
+  // confirmed terminal status may display 100%.
+  if (jobStatus.status === 'completed' || jobStatus.status === 'awaiting_confirmation') {
+    highestProgressRef.current = 100
+  } else {
+    highestProgressRef.current = Math.min(
+      99,
+      Math.max(highestProgressRef.current, view.progress),
+    )
+  }
   const progress = highestProgressRef.current
 
   const panelStyle =
