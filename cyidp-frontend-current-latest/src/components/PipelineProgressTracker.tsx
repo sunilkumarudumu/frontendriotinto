@@ -135,14 +135,17 @@ function getPipelineProgress(jobStatus: JobStatus | null): number {
 
   const rank = stageRank(jobStatus.stage)
   const stageBased = rank < 0 ? 0 : clampPercent(((rank + 1) / 8) * 100)
+  const stageCap = rank < 0 ? 15 : clampPercent(Math.min(stageBased + 12, 99))
 
+  let value = stageBased
   if (typeof jobStatus.progress === 'number' && jobStatus.progress > 0) {
     if (rank >= 0 && rank < stageRank('asset_classification')) {
-      return clampPercent(Math.min(Math.max(jobStatus.progress, stageBased * 0.85), 80))
+      value = clampPercent(Math.min(Math.max(jobStatus.progress, stageBased * 0.85), 80))
+    } else {
+      value = clampPercent(Math.max(jobStatus.progress, stageBased * 0.85))
     }
-    return clampPercent(Math.max(jobStatus.progress, stageBased * 0.85))
   }
-  return stageBased
+  return Math.min(value, stageCap)
 }
 
 function buildWorkflowView(jobStatus: JobStatus): WorkflowView {
